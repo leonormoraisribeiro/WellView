@@ -43,7 +43,6 @@ pxCo_dict = {
 
 preview_process = None 
 
-# Function to verify if the code is running on a Raspberry Pi
 def is_raspberry_pi():
         """Verify if the code is running on a Raspberry Pi."""
         try:
@@ -229,7 +228,7 @@ def open_image_window():
                 file_name = os.path.join(folderpath, f"{current_datetime}_{well_id}_{current_magnification}.png")
 
                 try:
-                    # Capture image using the appropriate camera command
+                    ''' Capture image using the appropriate camera command '''
                     cmd = get_camera_command("still")
                     if "libcamera" in cmd:
                         args = [cmd, "--hflip", "--vflip", "-e", "png", "-o", file_name]
