@@ -5,8 +5,23 @@ from datetime import datetime
 import os
 from PIL import Image, ImageTk
 import subprocess
+import shutil
 
 saved_files = []
+
+def get_camera_command(base):
+    """
+    Returns the correct camera command depending on the OS version.
+    """
+    rpi_cmd = f"rpicam-{base}"
+    if shutil.which(rpi_cmd):
+        return rpi_cmd
+    
+    lib_cmd = f"libcamera-{base}"
+    if shutil.which(lib_cmd):
+        return lib_cmd
+    
+    raise RuntimeError(f"No camera command found for '{base}'")
 
 # Plate dimensions
 pxRo_dict = {
@@ -139,9 +154,10 @@ def open_image_window():
     def preview_camera():
         global preview_process
         try:
-            preview_process = subprocess.Popen(["libcamera-hello", "-t", "0", "--hflip", "--vflip"])
+            preview_process = subprocess.Popen([get_camera_command("hello"), "-t", "0", "--hflip", "--vflip"])
         except subprocess.CalledProcessError as e:
             print(f"Error during camera preview: {e}")
+    
     Button(preview_button_frame, text="Start Preview", command=preview_camera).pack(side="left", padx=10)
 
 
@@ -151,6 +167,7 @@ def open_image_window():
             preview_process.terminate()
             preview_process.wait()
             preview_process = None
+    
     Button(preview_button_frame, text="Close Preview", command=stop_preview).pack(side="left", padx=10)
 
 
@@ -212,9 +229,15 @@ def open_image_window():
                 file_name = os.path.join(folderpath, f"{current_datetime}_{well_id}_{current_magnification}.png")
 
                 try:
-                    subprocess.run(["libcamera-still", "--hflip", "--vflip", "-e", "png", "-o", file_name], check=True)
+                    # Capture image using the appropriate camera command
+                    cmd = get_camera_command("still")
+                    if "libcamera" in cmd:
+                        args = [cmd, "--hflip", "--vflip", "-e", "png", "-o", file_name]
+                    else:  # rpicam
+                        args = [cmd, "--hflip", "--vflip", "-o", file_name]
+                    subprocess.run(args, check=True)
                     print(f"Image captured and saved: {file_name}")
-                    
+
                     history_text_main.config(state='normal')
                     history_text_main.insert('end', file_name + '\n')
                     history_text_main.config(state='disabled')
