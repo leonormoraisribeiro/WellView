@@ -15,6 +15,7 @@ The program starts from a main menu and opens a secondary window to view and int
 - Graphical selection of wells
 - Selectable magnification level (10x, 20x, 30x, 40x, 50x, 63x for our Nikon SMZ800 with 10x eyepieces)
 - **Raspberry Pi Camera integration** for image capture
+- Preview mode for live camera feed before capture
 - History log of selected wells and saved files
 
 ## Installation
