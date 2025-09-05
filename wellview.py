@@ -1,3 +1,4 @@
+import cmd
 from tkinter import Tk, Label, Entry, Button, StringVar, OptionMenu, W, E, Toplevel, Canvas, Text, Frame
 import cv2
 from bisect import bisect
@@ -8,6 +9,31 @@ import subprocess
 import shutil
 
 saved_files = []
+
+def center_on_screen(win):
+    win.update_idletasks()
+    sw, sh = win.winfo_screenwidth(), win.winfo_screenheight()
+    w, h = win.winfo_width(), win.winfo_height()
+    x, y = (sw - w) // 2, (sh - h) // 2
+    win.geometry(f"+{x}+{y}")
+
+def move_to_bottom_right(win, margin_x=0, margin_y=0):
+    win.update_idletasks()
+    sw, sh = win.winfo_screenwidth(), win.winfo_screenheight()
+
+    deco_left = win.winfo_rootx() - win.winfo_x()
+    deco_top  = win.winfo_rooty() - win.winfo_y()
+
+    outer_w = win.winfo_width()  + 2 * deco_left
+    outer_h = win.winfo_height() + deco_top + deco_left  
+
+    x = sw - outer_w - margin_x
+    y = sh - outer_h - margin_y
+    if x < 0: x = 0
+    if y < 0: y = 0
+    win.geometry(f"+{int(x)}+{int(y)}")
+
+
 
 def get_camera_command(base):
     """
@@ -100,7 +126,7 @@ def open_image_window():
     top_frame = Frame(image_window)
     top_frame.pack(fill="x")
     
-    # Add the I3Slogo
+    # Add the i3S logo
     logo_image = Image.open("logo2.png")
     logo_image = logo_image.resize((300, 145))  
     logo_tk = ImageTk.PhotoImage(logo_image)
@@ -138,7 +164,15 @@ def open_image_window():
     history_text = Text(history_frame, height=10, width=50, state='disabled')
     history_text.grid(row=1, column=0, columnspan=3, padx=10, pady=5)
 
-    Button(history_frame, text="Back", command=image_window.destroy).grid(row=2, column=0, padx=10, pady=5, sticky="e")
+    def back_and_center():
+        try:
+            stop_preview()
+        except Exception:
+            pass
+        center_on_screen(main_window)
+        image_window.destroy()
+
+    Button(history_frame, text="Back", command=back_and_center).grid(row=2, column=0, padx=10, pady=5, sticky="e")
 
     Label(history_frame, text="Magnification:").grid(row=2, column=1, padx=10)
 
@@ -230,10 +264,7 @@ def open_image_window():
                 try:
                     ''' Capture image using the appropriate camera command '''
                     cmd = get_camera_command("still")
-                    if "libcamera" in cmd:
-                        args = [cmd, "--hflip", "--vflip", "-e", "png", "-o", file_name]
-                    else:  # rpicam
-                        args = [cmd, "--hflip", "--vflip", "-o", file_name]
+                    args = [cmd, "--hflip", "--vflip", "-e", "png", "-o", file_name]
                     subprocess.run(args, check=True)
                     print(f"Image captured and saved: {file_name}")
 
@@ -246,7 +277,9 @@ def open_image_window():
 
     
     canvas.bind("<Button-1>", click_canvas)
-    
+    image_window.protocol("WM_DELETE_WINDOW", back_and_center)
+    move_to_bottom_right(main_window, margin_y=95)
+
 
 def start_program():
     open_image_window()
@@ -291,5 +324,7 @@ Label(main_window, text="Saved Files History:").grid(column=0, row=5, columnspan
 history_text_main = Text(main_window, height=10, width=50, state='disabled')
 history_text_main.grid(column=0, row=6, columnspan=2, padx=10, pady=5)
 
+main_window.update_idletasks()
+center_on_screen(main_window)
 
 main_window.mainloop()
