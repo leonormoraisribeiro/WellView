@@ -69,11 +69,12 @@ Requires installation on Rasberry Pi:
 2. Select the *Microplate Type*.
 3. Select the *Magnification* (can be changed on the fly in the secondary interface).
 4. Click *Start* to open the well selection interface.
-5. Click on a well to log its selection and capture an image.
-6. Click *Start Preview* to open a live preview from the Raspberry Pi camera.
-7. Click *Close Preview* to close the live preview from the Raspberry Pi camera.
-8. Click *Back* to return to the primary menu (and change the *Microplate ID*).
-9. Click *Finish* to exit the program.
+5. The Microplate ID can also be edited directly in the well selection interface.
+6. Click on a well to log its selection and capture an image.
+7. Click *Start Preview* to open a live preview from the Raspberry Pi camera.
+8. Click *Close Preview* to close the live preview from the Raspberry Pi camera.
+9. Click *Back* to return to the primary menu (and change the *Microplate ID*).
+10. Click *Finish* to exit the program.
 
 
 ## Notes
