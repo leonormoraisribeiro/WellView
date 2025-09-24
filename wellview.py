@@ -99,12 +99,17 @@ def open_image_window():
     global img_cv, img_tk, img_pil, canvas, pltSel, userNm, plateNm, history_text, logo_tk
     userNm = name_label_field.get().strip() or "DefaultUser"
     plateNm = plate_label_field.get().strip() or "DefaultPlate"
+    plate_name_var = StringVar(value=plateNm)
     pltSel = plate_value.get() if plate_value.get() in pxCo_dict else "96-well plate"
     img_path = f"{pltSel.replace('-well plate', '')}-Well_plate.jpg"
-    
+    def on_plate_change(*_):
+        globals()['plateNm'] = plate_name_var.get().strip() or "DefaultPlate"
+
+    plate_name_var.trace_add("write", on_plate_change)
+
     # Get the magnification value
     magnification = StringVar()
-    magnification.set(magnification_value.get())  # Copy the value from the main window
+    magnification.set(magnification_value.get())  
 
     if not os.path.exists(img_path):
         print(f"Error: The image {img_path} does not exist.")
@@ -133,9 +138,22 @@ def open_image_window():
     logo_label = Label(image_window, image=logo_tk)
     logo_label.place(relx=0.0, rely=0.0, anchor="nw", y=-25)
 
+    Label(top_frame, text="", font=("Arial", 12)).pack(pady=10)
+
     Label(top_frame, text="Select the well to capture", font=("Arial", 24, "bold")).pack()
     Label(top_frame, text=f"User: {userNm}", font=("Arial", 16)).pack()
-    Label(top_frame, text=f"Microplate ID: {plateNm}", font=("Arial", 16)).pack()
+
+    id_row = Frame(top_frame)
+    id_row.pack()
+    Label(id_row, text="Microplate ID:", font=("Arial", 16)).pack(side="left", padx=(0,8))
+
+    plate_entry = Entry(id_row, textvariable=plate_name_var, font=("Arial", 14), width=28)
+    plate_entry.pack(side="left")
+
+    def commit_plate_id(event=None):
+        pass
+
+    plate_entry.bind("<Return>", commit_plate_id)
 
     content_frame = Frame(image_window)
     content_frame.pack(fill="both", expand=True)
@@ -169,8 +187,13 @@ def open_image_window():
             stop_preview()
         except Exception:
             pass
+        # Return to main window and update fields
+        plate_label_field.delete(0, "end")
+        plate_label_field.insert(0, plate_name_var.get())
+
         center_on_screen(main_window)
         image_window.destroy()
+
 
     Button(history_frame, text="Back", command=back_and_center).grid(row=2, column=0, padx=10, pady=5, sticky="e")
 
@@ -204,7 +227,7 @@ def open_image_window():
     Button(preview_button_frame, text="Close Preview", command=stop_preview).pack(side="left", padx=10)
 
 
-    # Function to handle the click event on a well
+    # Function to handle the click on a well
     def click_canvas(event):
         global img_cv, img_pil, img_tk
         x, y = event.x, event.y
@@ -256,7 +279,9 @@ def open_image_window():
                 current_datetime = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
                 home_dir = os.path.expanduser("~")
                 pictures_dir = os.path.join(home_dir, "Pictures")
-                folderpath = os.path.join(pictures_dir, userNm, plateNm)
+                current_plate_id = plate_name_var.get().strip() or "DefaultPlate"
+
+                folderpath = os.path.join(pictures_dir, userNm, current_plate_id)
                 os.makedirs(folderpath, exist_ok=True)
 
                 file_name = os.path.join(folderpath, f"{current_datetime}_{well_id}_{current_magnification}.png")
