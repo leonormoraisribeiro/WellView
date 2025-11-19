@@ -90,7 +90,12 @@ Images are saved in the user's Pictures directory under:
 ## License
 This project is licensed under the **GNU General Public License v3.0 (GPL-3.0)**.
 
-You are free to use, modify, and distribute this software, provided that any
-derivative work is also released under the same license. For full details,
-see the [LICENSE](LICENSE) file included in this repository.
+This means that:
+- You are free to **use**, **modify**, and **redistribute** this software.
+- Any distributed modified version must also be released under the **same GPL license**.
+- The full license text is available in the [LICENSE](LICENSE) file.
+
+For more details, see the official GNU documentation:  
+https://www.gnu.org/licenses/gpl-3.0.en.html
+
 
