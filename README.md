@@ -84,3 +84,13 @@ Ensure that rpicam-still is installed for image capture.
 Images are saved in the user's Pictures directory under:
 ```bash
 ~/Pictures/{User}/{Microplate ID}.
+```
+
+
+## License
+This project is licensed under the **GNU General Public License v3.0 (GPL-3.0)**.
+
+You are free to use, modify, and distribute this software, provided that any
+derivative work is also released under the same license. For full details,
+see the [LICENSE](LICENSE) file included in this repository.
+
