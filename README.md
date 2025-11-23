@@ -15,7 +15,7 @@ The program starts from a main menu and opens a secondary window to view and int
 - Supports **96-well**, **48-well** and **24-well** plates
 - Graphical selection of wells
 - Selectable magnification level (10x, 20x, 30x, 40x, 50x, 63x for our Nikon SMZ800 with 10x eyepieces)
-- **Multiple layouts per well (NEW):**
+- **Multiple layouts per well:**
   - 96-well: single, 2H, 2V, 3H, 3V, 3L  
   - 48-well: single, 2H, 3H  
   - 24-well: single, 4-Clover, 4-Staggered
