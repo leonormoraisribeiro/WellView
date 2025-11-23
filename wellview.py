@@ -1,5 +1,8 @@
 import cmd
-from tkinter import Tk, Label, Entry, Button, StringVar, OptionMenu, W, E, Toplevel, Canvas, Text, Frame
+from tkinter import (
+    Tk, Label, Entry, Button, StringVar, OptionMenu, W, E,
+    Toplevel, Canvas, Text, Frame
+)
 import cv2
 from bisect import bisect
 from datetime import datetime
@@ -9,6 +12,8 @@ import subprocess
 import shutil
 
 saved_files = []
+preview_process = None
+
 
 def center_on_screen(win):
     win.update_idletasks()
@@ -16,6 +21,7 @@ def center_on_screen(win):
     w, h = win.winfo_width(), win.winfo_height()
     x, y = (sw - w) // 2, (sh - h) // 2
     win.geometry(f"+{x}+{y}")
+
 
 def move_to_bottom_right(win, margin_x=0, margin_y=0):
     win.update_idletasks()
@@ -34,7 +40,6 @@ def move_to_bottom_right(win, margin_x=0, margin_y=0):
     win.geometry(f"+{int(x)}+{int(y)}")
 
 
-
 def get_camera_command(base):
     """
     Returns the correct camera command depending on the OS version.
@@ -49,37 +54,63 @@ def get_camera_command(base):
     
     raise RuntimeError(f"No camera command found for '{base}'")
 
-# Plate dimensions
+
+def is_raspberry_pi():
+    """Verify if the code is running on a Raspberry Pi."""
+    try:
+        with open("/proc/device-tree/model", "r") as f:
+            if "Raspberry Pi" in f.read():
+                return True
+    except FileNotFoundError:
+        return False
+    return False
+
+
 pxRo_dict = {
-    '96-well plate': [0, 49.45, 91.66, 106.88, 149.06, 161.56, 203.75, 217.91, 260.09, 274.22,
-                      316.41, 330.56, 372.75, 386.25, 428.44, 442.59, 484.78],
-    '48-well plate': [0, 78, 138, 153, 214, 228, 290, 302, 366, 377, 442, 452, 518],
-    '24-well plate': [0, 85.16, 172.5, 198.84, 286.18, 312.53, 399.87, 426.09, 513.43]
+    '96-well plate': [0, 49.45, 91.66, 106.88, 149.06, 161.56, 203.75, 217.91,
+                      260.09, 274.22, 316.41, 330.56, 372.75, 386.25, 428.44,
+                      442.59, 484.78],
+    '48-well plate': [0, 78, 138, 153, 214, 228, 290, 302, 366, 377,
+                      442, 452, 518],
+    '24-well plate': [0, 85.16, 172.5, 198.84, 286.18, 312.53, 399.87,
+                      426.09, 513.43]
 }
 
 pxCo_dict = {
-    '96-well plate': [0, 68.99, 111.13, 125.27, 167.42, 181.25, 223.4, 237.5, 279.65, 293.75,
-                      335.9, 350.04, 392.19, 406.33, 448.48, 462.62, 504.77, 518.87, 561.02,
+    '96-well plate': [0, 68.99, 111.13, 125.27, 167.42, 181.25, 223.4,
+                      237.5, 279.65, 293.75, 335.9, 350.04, 392.19,
+                      406.33, 448.48, 462.62, 504.77, 518.87, 561.02,
                       575.16, 617.31, 631.45, 673.6, 687.73, 729.88],
-    '48-well plate': [0, 98.24, 156.6, 182.91, 241.27, 267.58, 325.94, 352.25,
-                      410.61, 436.92, 495.28, 521.59, 579.95, 606.26, 664.62, 690.93, 749.29],
-    '24-well plate': [0, 96.23, 183.59, 208.96, 296.32, 321.69, 409.05, 434.42,
-                      521.78, 547.15, 634.51, 659.88, 747.24]
+    '48-well plate': [0, 98.24, 156.6, 182.91, 241.27, 267.58, 325.94,
+                      352.25, 410.61, 436.92, 495.28, 521.59, 579.95,
+                      606.26, 664.62, 690.93, 749.29],
+    '24-well plate': [0, 96.23, 183.59, 208.96, 296.32, 321.69, 409.05,
+                      434.42, 521.78, 547.15, 634.51, 659.88, 747.24]
 }
 
-preview_process = None 
 
-def is_raspberry_pi():
-        """Verify if the code is running on a Raspberry Pi."""
-        try:
-            with open("/proc/device-tree/model", "r") as f:
-                if "Raspberry Pi" in f.read():
-                    return True
-        except FileNotFoundError:
-            return False
-        return False
+PLATE_LAYOUT_OPTIONS = {
+    '24-well plate': {
+        'Single (1 sample / well)': 'single',
+        'CombiClover (4 samples / well)': '4Clover',
+        'Intelli-Plate 24-4 (4 samples / well)': '4Staggered',
+    },
+    '48-well plate': {
+        'Single (1 sample / well)': 'single',
+        'Intelli-Plate 48-02 (2 horizontal)': '2H',
+        'Intelli-Plate 48-03 (3 horizontal)': '3H',
+    },
+    '96-well plate': {
+        'Single (1 sample / well)': 'single',
+        'CrystalQuick X (2 horizontal)': '2H',
+        'MRC 2 / Intelli-Plate 96-2 (2 vertical)': '2V',
+        'CrystalQuick RW (3 horizontal)': '3H',
+        'Intelli-Plate 96-3 (3 vertical)': '3V',
+        'SwissCi Midi (3 in L-shape)': '3L',
+    },
+}
 
-# Function to select the well
+
 def sel_well(x, y, pltSel):
     pxCo = pxCo_dict[pltSel]
     iCo = bisect(pxCo, x)
@@ -94,14 +125,28 @@ def sel_well(x, y, pltSel):
     
     return selected
 
-# Function to open the image window
+
 def open_image_window():
+    """
+    Abre a janela da microplaca. Agora suporta:
+      - segundo nível de seleção (layout de amostras por poço)
+      - pop-up para escolher sub-amostra quando layout != single
+    """
     global img_cv, img_tk, img_pil, canvas, pltSel, userNm, plateNm, history_text, logo_tk
+
     userNm = name_label_field.get().strip() or "DefaultUser"
     plateNm = plate_label_field.get().strip() or "DefaultPlate"
     plate_name_var = StringVar(value=plateNm)
+
+    # Get the selected plate
     pltSel = plate_value.get() if plate_value.get() in pxCo_dict else "96-well plate"
+
+    # Get the selected layout
+    layout_label = layout_value.get()
+    layout_kind = PLATE_LAYOUT_OPTIONS.get(pltSel, {}).get(layout_label, 'single')
+
     img_path = f"{pltSel.replace('-well plate', '')}-Well_plate.jpg"
+
     def on_plate_change(*_):
         globals()['plateNm'] = plate_name_var.get().strip() or "DefaultPlate"
 
@@ -161,13 +206,13 @@ def open_image_window():
     image_frame = Frame(content_frame)
     image_frame.pack(side="left", padx=40, pady=20)
 
-    img_pil = Image.fromarray(img_cv)
-    width, height = img_pil.size
+    img_pil_local = Image.fromarray(img_cv)
+    width, height = img_pil_local.size
     canvas = Canvas(image_frame, width=width, height=height, bg="white", highlightthickness=0)
     canvas.pack()
 
     right_frame = Frame(content_frame, width=300)
-    right_frame.pack(side="left", fill="y",padx=40 , pady=20, anchor="n")
+    right_frame.pack(side="left", fill="y", padx=40, pady=20, anchor="n")
 
     history_frame = Frame(right_frame)
     history_frame.pack(pady=10, fill="x")
@@ -194,7 +239,6 @@ def open_image_window():
         center_on_screen(main_window)
         image_window.destroy()
 
-
     Button(history_frame, text="Back", command=back_and_center).grid(row=2, column=0, padx=10, pady=5, sticky="e")
 
     Label(history_frame, text="Magnification:").grid(row=2, column=1, padx=10)
@@ -216,7 +260,6 @@ def open_image_window():
     
     Button(preview_button_frame, text="Start Preview", command=preview_camera).pack(side="left", padx=10)
 
-
     def stop_preview():
         global preview_process
         if preview_process and preview_process.poll() is None:
@@ -227,9 +270,173 @@ def open_image_window():
     Button(preview_button_frame, text="Close Preview", command=stop_preview).pack(side="left", padx=10)
 
 
-    # Function to handle the click on a well
-    def click_canvas(event):
+    def capture_and_annotate(full_well_id, current_magnification, x_center, y_center):
+        """
+        full_well_id: ex. 'B4' (single) ou 'B4-L', 'B4-TL', etc.
+        """
         global img_cv, img_pil, img_tk
+
+        history_text.config(state='normal')
+        history_text.insert(
+            'end',
+            f"{datetime.now().strftime('%H:%M:%S')} - {current_magnification} - {full_well_id}\n"
+        )
+        history_text.config(state='disabled')
+
+        img_display = img_cv.copy()
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        text = full_well_id
+
+        if pltSel == '96-well plate':
+            font_scale = 0.6
+            thickness = 2
+        else:
+            font_scale = 1
+            thickness = 2
+
+        text_size = cv2.getTextSize(text, font, font_scale, thickness)[0]
+        text_x = int(x_center - text_size[0] / 2)
+        text_y = int(y_center + text_size[1] / 2)
+
+        cv2.putText(img_display, text, (text_x, text_y), font, font_scale, (255, 0, 0), thickness)
+
+        img_pil = Image.fromarray(img_display)
+        img_tk = ImageTk.PhotoImage(img_pil)
+        canvas.create_image(0, 0, anchor="nw", image=img_tk)
+
+        if is_raspberry_pi():
+            current_datetime = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            home_dir = os.path.expanduser("~")
+            pictures_dir = os.path.join(home_dir, "Pictures")
+            current_plate_id = plate_name_var.get().strip() or "DefaultPlate"
+
+            folderpath = os.path.join(pictures_dir, userNm, current_plate_id)
+            os.makedirs(folderpath, exist_ok=True)
+
+            file_name = os.path.join(
+                folderpath,
+                f"{current_datetime}_{full_well_id}_{current_magnification}.png"
+            )
+
+            try:
+                cmd_cam = get_camera_command("still")
+                args = [cmd_cam, "--hflip", "--vflip", "-e", "png", "-o", file_name]
+                subprocess.run(args, check=True)
+                print(f"Image captured and saved: {file_name}")
+
+                history_text_main.config(state='normal')
+                history_text_main.insert('end', file_name + '\n')
+                history_text_main.config(state='disabled')
+
+            except subprocess.CalledProcessError as e:
+                print(f"Error capturing image with Raspberry Pi: {e}")
+
+    def open_sample_popup(base_well_id, current_magnification, x_center, y_center):
+        """
+        Pop-up usando uma imagem real do layout.
+        Define zonas clicáveis através dos círculos na imagem (420x420).
+        """
+
+        layout_files = {
+            '2H': '2_samples_horizontal.jpeg',
+            '2V': '2_samples_vertical.jpeg',
+            '3H': '3_samples_horizontal.jpeg',
+            '3V': '3_samples_vertical.jpeg',
+            '3L': '3_samples_L-shaped.jpeg',
+            '4Staggered': '24-well_4_samples.jpeg',
+            '4Clover': '24-well_clover.jpeg',
+        }
+
+        if layout_kind == 'single':
+            capture_and_annotate(base_well_id, current_magnification, x_center, y_center)
+            return
+
+        img_path = layout_files[layout_kind]
+        if not os.path.exists(img_path):
+            print(f"ERRO: Não encontrei a imagem {img_path}")
+            return
+
+        popup = Toplevel(image_window)
+        popup.title(f"Select sample in well {base_well_id}")
+        popup.geometry("450x480")
+        popup.resizable(False, False)
+
+        Label(popup, text=f"Well {base_well_id}", font=("Arial", 13, "bold")).pack(pady=4)
+
+        layout_pil = Image.open(img_path)
+        layout_tk = ImageTk.PhotoImage(layout_pil)
+
+        canvas_popup = Canvas(popup, width=420, height=420)
+        canvas_popup.pack(pady=5)
+        canvas_popup.create_image(0, 0, anchor="nw", image=layout_tk)
+        canvas_popup.image = layout_tk  # prevenir GC
+
+
+        # images are 420x420
+        W = 420
+        H = 420
+
+        regions = []  
+
+        r = 80
+
+        if layout_kind == '2H':
+            regions = [
+                {'name': 'L', 'cx': W*0.33, 'cy': H*0.50, 'r': r},
+                {'name': 'R', 'cx': W*0.67, 'cy': H*0.50, 'r': r},
+            ]
+
+        elif layout_kind == '2V':
+            regions = [
+                {'name': 'T', 'cx': W*0.50, 'cy': H*0.33, 'r': r},
+                {'name': 'B', 'cx': W*0.50, 'cy': H*0.67, 'r': r},
+            ]
+
+        elif layout_kind == '3H':
+            regions = [
+                {'name': 'L', 'cx': W*0.20, 'cy': H*0.50, 'r': r},
+                {'name': 'M', 'cx': W*0.50, 'cy': H*0.50, 'r': r},
+                {'name': 'R', 'cx': W*0.80, 'cy': H*0.50, 'r': r},
+            ]
+
+        elif layout_kind == '3V':
+            regions = [
+                {'name': 'T', 'cx': W*0.50, 'cy': H*0.20, 'r': r},
+                {'name': 'M', 'cx': W*0.50, 'cy': H*0.50, 'r': r},
+                {'name': 'B', 'cx': W*0.50, 'cy': H*0.80, 'r': r},
+            ]
+
+        elif layout_kind in ('4Clover', '4Staggered'):
+            regions = [
+                {'name': 'TL', 'cx': W*0.30, 'cy': H*0.30, 'r': r},
+                {'name': 'TR', 'cx': W*0.70, 'cy': H*0.30, 'r': r},
+                {'name': 'BL', 'cx': W*0.30, 'cy': H*0.70, 'r': r},
+                {'name': 'BR', 'cx': W*0.70, 'cy': H*0.70, 'r': r},
+            ]
+
+        elif layout_kind == '3L':
+            regions = [
+                {'name': 'T',  'cx': W*0.50, 'cy': H*0.25, 'r': r},
+                {'name': 'BL', 'cx': W*0.33, 'cy': H*0.70, 'r': r},
+                {'name': 'BR', 'cx': W*0.67, 'cy': H*0.70, 'r': r},
+            ]
+
+        def on_click(event):
+            px, py = event.x, event.y
+
+            for reg in regions:
+                dx = px - reg['cx']
+                dy = py - reg['cy']
+                if dx*dx + dy*dy <= reg['r']*reg['r']:
+                    full_id = f"{base_well_id}-{reg['name']}"
+                    capture_and_annotate(full_id, current_magnification, x_center, y_center)
+                    popup.destroy()
+                    return
+
+        canvas_popup.bind("<Button-1>", on_click)
+
+
+    def click_canvas(event):
         x, y = event.x, event.y
         pxCo = pxCo_dict[pltSel]
         pxRo = pxRo_dict[pltSel]
@@ -243,64 +450,15 @@ def open_image_window():
 
             current_magnification = magnification.get()
 
-            # Update the history
-            history_text.config(state='normal')
-            history_text.insert('end', f"{datetime.now().strftime('%H:%M:%S')} - {current_magnification} - {well_id}\n")
-            history_text.config(state='disabled')
-
-            # Copy and draw label at center of correct well
-            img_display = img_cv.copy()
-            font = cv2.FONT_HERSHEY_SIMPLEX
-            text = well_id
-
-            if pltSel == '96-well plate':
-                font_scale = 0.6
-                thickness = 2
-            else:
-                font_scale = 1
-                thickness = 2
-
             x_center = (pxCo[iCo - 1] + pxCo[iCo]) // 2
             y_center = (pxRo[iRo - 1] + pxRo[iRo]) // 2
 
-            text_size = cv2.getTextSize(text, font, font_scale, thickness)[0]
-            text_x = int(x_center - text_size[0] / 2)
-            text_y = int(y_center + text_size[1] / 2)
+            if layout_kind == 'single':
+                capture_and_annotate(well_id, current_magnification, x_center, y_center)
+            else:
+                # Open the popup
+                open_sample_popup(well_id, current_magnification, x_center, y_center)
 
-            cv2.putText(img_display, text, (text_x, text_y), font, font_scale, (255, 0, 0), thickness)
-
-
-            img_pil = Image.fromarray(img_display)
-            img_tk = ImageTk.PhotoImage(img_pil)
-            canvas.create_image(0, 0, anchor="nw", image=img_tk)
-
-            # Save the image taken with the Raspberry Pi
-            if is_raspberry_pi():
-                current_datetime = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-                home_dir = os.path.expanduser("~")
-                pictures_dir = os.path.join(home_dir, "Pictures")
-                current_plate_id = plate_name_var.get().strip() or "DefaultPlate"
-
-                folderpath = os.path.join(pictures_dir, userNm, current_plate_id)
-                os.makedirs(folderpath, exist_ok=True)
-
-                file_name = os.path.join(folderpath, f"{current_datetime}_{well_id}_{current_magnification}.png")
-
-                try:
-                    ''' Capture image using the appropriate camera command '''
-                    cmd = get_camera_command("still")
-                    args = [cmd, "--hflip", "--vflip", "-e", "png", "-o", file_name]
-                    subprocess.run(args, check=True)
-                    print(f"Image captured and saved: {file_name}")
-
-                    history_text_main.config(state='normal')
-                    history_text_main.insert('end', file_name + '\n')
-                    history_text_main.config(state='disabled')
-
-                except subprocess.CalledProcessError as e:
-                    print(f"Error capturing image with Raspberry Pi: {e}")
-
-    
     canvas.bind("<Button-1>", click_canvas)
     image_window.protocol("WM_DELETE_WINDOW", back_and_center)
     move_to_bottom_right(main_window, margin_y=95)
@@ -309,7 +467,7 @@ def open_image_window():
 def start_program():
     open_image_window()
 
-# Main window setup
+
 main_window = Tk()
 main_window.title('WellView')
 main_window.columnconfigure(0, weight=1)
@@ -334,20 +492,58 @@ plate_label_field.grid(column=1, row=2)
 Label(main_window, text="Magnification:").grid(column=0, row=3)
 magnification_value = StringVar(main_window)
 magnification_value.set("10x")  # Standard value
-OptionMenu(main_window, magnification_value, "10x", "20x", "30x", "40x", "50x", "63x").grid(column=1, row=3)
+OptionMenu(main_window, magnification_value,
+           "10x", "20x", "30x", "40x", "50x", "63x").grid(column=1, row=3)
 
+# First level: microplate type
 Label(main_window, text="Microplate type").grid(column=0, row=4)
 plate_list = ["96-well plate", "48-well plate", "24-well plate"]
 plate_value = StringVar(main_window)
-plate_value.set("Select a microplate type")
-OptionMenu(main_window, plate_value, *plate_list).grid(column=0, row=4, columnspan=2, sticky=W+E)
+plate_value.set("96-well plate")
+plate_menu = OptionMenu(main_window, plate_value, *plate_list)
+plate_menu.grid(column=0, row=4, columnspan=2, sticky=W+E)
+
+# Second level: samples per well / layout
+Label(main_window, text="Samples per well / layout").grid(column=0, row=5)
+layout_value = StringVar(main_window)
+layout_value.set("Single (1 sample / well)")  # default value
+layout_menu = OptionMenu(main_window, layout_value, "Single (1 sample / well)")
+layout_menu.grid(column=0, row=6, columnspan=2, sticky=W+E)
+
+def update_layout_options(*_):
+    plate = plate_value.get()
+    menu = layout_menu["menu"]
+    menu.delete(0, "end")
+
+    options_dict = PLATE_LAYOUT_OPTIONS.get(plate, {})
+    if not options_dict:
+        layout_value.set("Single (1 sample / well)")
+        menu.add_command(
+            label="Single (1 sample / well)",
+            command=lambda v="Single (1 sample / well)": layout_value.set(v)
+        )
+        return
+
+    first_label = None
+    for label in options_dict.keys():
+        if first_label is None:
+            first_label = label
+        menu.add_command(label=label, command=lambda v=label: layout_value.set(v))
+
+    if first_label:
+        layout_value.set(first_label)
+
+# whenever the microplate type changes, update the layout options
+plate_value.trace_add("write", update_layout_options)
+# initialize options right away
+update_layout_options()
 
 Button(main_window, text="Start", command=start_program).grid(column=0, row=40)
 Button(main_window, text="Finish", command=main_window.quit).grid(column=1, row=40, padx=10, pady=10)
 
-Label(main_window, text="Saved Files History:").grid(column=0, row=5, columnspan=2)
+Label(main_window, text="Saved Files History:").grid(column=0, row=7, columnspan=2)
 history_text_main = Text(main_window, height=10, width=50, state='disabled')
-history_text_main.grid(column=0, row=6, columnspan=2, padx=10, pady=5)
+history_text_main.grid(column=0, row=8, columnspan=2, padx=10, pady=5)
 
 main_window.update_idletasks()
 center_on_screen(main_window)
