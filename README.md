@@ -57,6 +57,25 @@ The program starts from a main menu and opens a secondary window to view and int
    ```bash
    python3 wellview.py
 
+## Usage
+1. Enter the *User Name* and *Microplate ID*.
+2. Select the *Microplate Type* (24/48/96 wells).
+3. Select the Samples per well / layout
+   (automatically filtered according to the chosen plate).
+5. Select the *Magnification* (can be changed on the fly in the secondary interface).
+
+   The Microplate ID can also be edited directly in the well selection interface.
+7. Click *Start* to open the well selection interface.
+8. Click any well to:
+   - identify its position,
+   - select the sub-sample (if layout > 1),
+   - annotate the microplate image,
+   - capture an image from the Raspberry Pi camera.
+10. Click *Start Preview* to open a live preview from the Raspberry Pi camera.
+11. Click *Close Preview* to close the live preview from the Raspberry Pi camera.
+12. Click *Back* to return to the primary menu (and change the *Microplate ID*).
+13. Click *Finish* to exit the program.
+
 ## File Storage
 Images are automatically saved under:
 ```
@@ -77,26 +96,6 @@ Pre-installed with Python:
 Requires installation on Rasberry Pi:
 - OpenCV (cv2)
 - Pillow (PIL)
-
-## Usage
-1. Enter the *User Name* and *Microplate ID*.
-2. Select the *Microplate Type* (24/48/96 wells).
-3. Select the Samples per well / layout
-   (automatically filtered according to the chosen plate).
-5. Select the *Magnification* (can be changed on the fly in the secondary interface).
-
-   The Microplate ID can also be edited directly in the well selection interface.
-7. Click *Start* to open the well selection interface.
-8. Click any well to:
-   - identify its position,
-   - select the sub-sample (if layout > 1),
-   - annotate the microplate image,
-   - capture an image from the Raspberry Pi camera.
-10. Click *Start Preview* to open a live preview from the Raspberry Pi camera.
-11. Click *Close Preview* to close the live preview from the Raspberry Pi camera.
-12. Click *Back* to return to the primary menu (and change the *Microplate ID*).
-13. Click *Finish* to exit the program.
-
 
 ## Notes
 - Ensure rpicam-still (or libcamera-still) is installed for image capture.
