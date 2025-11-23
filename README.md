@@ -15,6 +15,10 @@ The program starts from a main menu and opens a secondary window to view and int
 - Supports **96-well**, **48-well** and **24-well** plates
 - Graphical selection of wells
 - Selectable magnification level (10x, 20x, 30x, 40x, 50x, 63x for our Nikon SMZ800 with 10x eyepieces)
+- **Multiple layouts per well (NEW):**
+  - 96-well: single, 2H, 2V, 3H, 3V, 3L  
+  - 48-well: single, 2H, 3H  
+  - 24-well: single, 4-Clover, 4-Staggered
 - **Raspberry Pi Camera integration** for image capture
 - Preview mode for live camera feed before capture
 - History log of selected wells and saved files
@@ -53,6 +57,15 @@ The program starts from a main menu and opens a secondary window to view and int
    ```bash
    python3 wellview.py
 
+## File Storage
+Images are automatically saved under:
+```
+~/Pictures/{User}/{Microplate ID}/
+```
+Each file is saved with timestamp, well ID and magnification.
+
+(Sub-sample identifiers such as L, R, TL, BR, etc. are included when layouts contain multiple samples.)
+
 ## Dependencies
 Pre-installed with Python:
 - Tkinter 
@@ -67,25 +80,27 @@ Requires installation on Rasberry Pi:
 
 ## Usage
 1. Enter the *User Name* and *Microplate ID*.
-2. Select the *Microplate Type*.
-3. Select the *Magnification* (can be changed on the fly in the secondary interface).
-4. Click *Start* to open the well selection interface.
-5. The Microplate ID can also be edited directly in the well selection interface.
-6. Click on a well to log its selection and capture an image.
-7. Click *Start Preview* to open a live preview from the Raspberry Pi camera.
-8. Click *Close Preview* to close the live preview from the Raspberry Pi camera.
-9. Click *Back* to return to the primary menu (and change the *Microplate ID*).
-10. Click *Finish* to exit the program.
+2. Select the *Microplate Type* (24/48/96 wells).
+3. Select the Samples per well / layout
+   (automatically filtered according to the chosen plate).
+5. Select the *Magnification* (can be changed on the fly in the secondary interface).
+
+   The Microplate ID can also be edited directly in the well selection interface.
+7. Click *Start* to open the well selection interface.
+8. Click any well to:
+   - identify its position,
+   - select the sub-sample (if layout > 1),
+   - annotate the microplate image,
+   - capture an image from the Raspberry Pi camera.
+10. Click *Start Preview* to open a live preview from the Raspberry Pi camera.
+11. Click *Close Preview* to close the live preview from the Raspberry Pi camera.
+12. Click *Back* to return to the primary menu (and change the *Microplate ID*).
+13. Click *Finish* to exit the program.
 
 
 ## Notes
-Ensure that rpicam-still is installed for image capture.
-
-Images are saved in the user's Pictures directory under:
-```bash
-~/Pictures/{User}/{Microplate ID}.
-```
-
+- Ensure rpicam-still (or libcamera-still) is installed for image capture.
+- The microplate grid is calibrated using pixel coordinates for precise well detection.
 
 ## License
 This project is licensed under the **GNU General Public License v3.0 (GPL-3.0)**.
