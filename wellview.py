@@ -357,9 +357,31 @@ def open_image_window():
             return
 
         popup = Toplevel(image_window)
+        popup.withdraw()
         popup.title(f"Select sample in well {base_well_id}")
         popup.geometry("450x480")
         popup.resizable(False, False)
+        
+        def show_popup():
+            image_window.update_idletasks()
+            # Center inside the fullscreen window
+            parent_x = image_window.winfo_rootx()
+            parent_y = image_window.winfo_rooty()
+            parent_w = image_window.winfo_width()
+            parent_h = image_window.winfo_height()
+            popup_w, popup_h = 450, 480
+        
+            x = parent_x + (parent_w - popup_w) // 2
+            y = parent_y + (parent_h - popup_h) // 2
+        
+            popup.geometry(f"{popup_w}x{popup_h}+{x}+{y}")
+            popup.deiconify()
+            popup.lift()
+            popup.focus_force()
+            popup.grab_set()   # ensures click events go to popup
+        
+        popup.after(10, show_popup)
+
 
         Label(popup, text=f"Well {base_well_id}", font=("Arial", 13, "bold")).pack(pady=4)
 
