@@ -56,7 +56,9 @@ def get_camera_command(base):
 
 
 def is_raspberry_pi():
-    """Verify if the code is running on a Raspberry Pi."""
+    """
+    Verify if the code is running on a Raspberry Pi.
+    """
     try:
         with open("/proc/device-tree/model", "r") as f:
             if "Raspberry Pi" in f.read():
@@ -127,11 +129,6 @@ def sel_well(x, y, pltSel):
 
 
 def open_image_window():
-    """
-    Abre a janela da microplaca. Agora suporta:
-      - segundo nível de seleção (layout de amostras por poço)
-      - pop-up para escolher sub-amostra quando layout != single
-    """
     global img_cv, img_tk, img_pil, canvas, pltSel, userNm, plateNm, history_text, logo_tk
 
     userNm = name_label_field.get().strip() or "DefaultUser"
@@ -332,10 +329,6 @@ def open_image_window():
                 print(f"Error capturing image with Raspberry Pi: {e}")
 
     def open_sample_popup(base_well_id, current_magnification, x_center, y_center):
-        """
-        Pop-up usando uma imagem real do layout.
-        Define zonas clicáveis através dos círculos na imagem (420x420).
-        """
 
         layout_files = {
             '2H': '2_samples_horizontal.jpeg',
