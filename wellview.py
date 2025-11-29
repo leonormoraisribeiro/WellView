@@ -1,4 +1,3 @@
-import cmd
 from tkinter import (
     Tk, Label, Entry, Button, StringVar, OptionMenu, W, E,
     Toplevel, Canvas, Text, Frame
@@ -167,8 +166,14 @@ def open_image_window():
     img_tk = ImageTk.PhotoImage(img_pil)
     
     image_window = Toplevel(main_window)
-    image_window.geometry("1920x1080")
+    screen_h = main_window.winfo_screenheight()
+    viewer_width = 1350  
+    viewer_height = screen_h
+
+    image_window.geometry(f"{viewer_width}x{viewer_height}+0+0")
     image_window.title("Microplate Viewer")
+    image_window.resizable(False, False)
+
     
     top_frame = Frame(image_window)
     top_frame.pack(fill="x")
@@ -212,7 +217,7 @@ def open_image_window():
     right_frame.pack(side="left", fill="y", padx=40, pady=20, anchor="n")
 
     history_frame = Frame(right_frame)
-    history_frame.pack(pady=10, fill="x")
+    history_frame.pack(pady=0, fill="x")
 
     canvas.create_image(0, 0, anchor="nw", image=img_tk)
 
@@ -222,7 +227,7 @@ def open_image_window():
 
     # History Text Box 
     history_text = Text(history_frame, height=10, width=50, state='disabled')
-    history_text.grid(row=1, column=0, columnspan=3, padx=10, pady=5)
+    history_text.grid(row=1, column=0, columnspan=3, padx=5, pady=2)
 
     def back_and_center():
         try:
@@ -236,13 +241,13 @@ def open_image_window():
         center_on_screen(main_window)
         image_window.destroy()
 
-    Button(history_frame, text="Back", command=back_and_center).grid(row=2, column=0, padx=10, pady=5, sticky="e")
+    Button(history_frame, text="Back", command=back_and_center).grid(row=2, column=0, padx=5, pady=2, sticky="e")
 
-    Label(history_frame, text="Magnification:").grid(row=2, column=1, padx=10)
+    Label(history_frame, text="Magnification:").grid(row=2, column=1, padx=5, pady=2)
 
-    Button(history_frame, text="Finish", command=main_window.quit).grid(row=2, column=2, padx=10, pady=5, sticky="w")
+    Button(history_frame, text="Finish", command=main_window.quit).grid(row=2, column=2, padx=5, pady=2, sticky="w")
     
-    OptionMenu(history_frame, magnification, "10x", "20x", "30x", "40x", "50x", "63x").grid(row=3, column=1, padx=10, pady=5)
+    OptionMenu(history_frame, magnification, "10x", "20x", "30x", "40x", "50x", "63x").grid(row=3, column=1, padx=5, pady=2)
 
     preview_button_frame = Frame(history_frame)
     preview_button_frame.grid(row=4, column=0, columnspan=3, pady=5)
@@ -346,54 +351,58 @@ def open_image_window():
 
         img_path = layout_files[layout_kind]
         if not os.path.exists(img_path):
-            print(f"ERRO: Não encontrei a imagem {img_path}")
+            print(f"ERROR: Image file not found: {img_path}")
             return
 
         popup = Toplevel(image_window)
         popup.withdraw()
         popup.title(f"Select sample in well {base_well_id}")
-        popup.geometry("450x480")
         popup.resizable(False, False)
         
         def show_popup():
             image_window.update_idletasks()
-            # Center inside the fullscreen window
-            parent_x = image_window.winfo_rootx()
-            parent_y = image_window.winfo_rooty()
-            parent_w = image_window.winfo_width()
-            parent_h = image_window.winfo_height()
-            popup_w, popup_h = 450, 480
-        
-            x = parent_x + (parent_w - popup_w) // 2
-            y = parent_y + (parent_h - popup_h) // 2
-        
-            popup.geometry(f"{popup_w}x{popup_h}+{x}+{y}")
+
+            popup_w, popup_h = 400, 420 
+
+            screen_w = image_window.winfo_screenwidth()
+            screen_h = image_window.winfo_screenheight()
+
+            margin_x = 10
+            margin_y = 10
+
+            x = screen_w - popup_w - margin_x
+            y = margin_y
+
+            popup.geometry(f"{popup_w}x{popup_h}+{int(x)}+{int(y)}")
             popup.deiconify()
             popup.lift()
             popup.focus_force()
-            popup.grab_set()   # ensures click events go to popup
+            popup.grab_set()
+
         
         popup.after(10, show_popup)
 
-
         Label(popup, text=f"Well {base_well_id}", font=("Arial", 13, "bold")).pack(pady=4)
 
+        IMG_W = 360
+        IMG_H = 360
+
         layout_pil = Image.open(img_path)
+        layout_pil = layout_pil.resize((IMG_W, IMG_H), Image.Resampling.LANCZOS)
         layout_tk = ImageTk.PhotoImage(layout_pil)
 
-        canvas_popup = Canvas(popup, width=420, height=420)
+        canvas_popup = Canvas(popup, width=IMG_W, height=IMG_H)
         canvas_popup.pack(pady=5)
         canvas_popup.create_image(0, 0, anchor="nw", image=layout_tk)
-        canvas_popup.image = layout_tk  # prevenir GC
+        canvas_popup.image = layout_tk
 
+        W = IMG_W
+        H = IMG_H
 
-        # images are 420x420
-        W = 420
-        H = 420
 
         regions = []  
 
-        r = 80
+        r = 60
 
         if layout_kind == '2H':
             regions = [
