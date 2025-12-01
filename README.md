@@ -45,7 +45,7 @@ The program starts from a main menu and opens a secondary window to view and int
 
    Then, clone this repository:
    ```bash
-   git clone https://github.com/leonorribeiroo/WellView
+   git clone https://github.com/leonormoraisribeiro/WellView
    ```
 
    Change the directory:
