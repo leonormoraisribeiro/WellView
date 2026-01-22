@@ -1,7 +1,7 @@
 [Desktop Entry]
 Name=WellView
 Comment=
-Icon=/home/administrator/WellView/icon.png
+Icon=/home/administrator/WellView/logo.png
 Exec=lxterminal --working-directory=/home/administrator/WellView/ -e ./wellview.py 
 Type=Application
 Encoding=UTF-8
