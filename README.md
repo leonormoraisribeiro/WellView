@@ -12,6 +12,9 @@ It allows users to:
 The program starts from a main menu and opens a secondary window to view and interact with the microplate.
 
 ## Features
+- **One-Click Launch:** Includes a desktop shortcut for easy access.
+- **Automated Setup:** A dedicated installation script handles permissions, system configurations, and shortcut creation.
+- **Customizable Magnification:** Magnification levels can be tailored during installation to match your specific microscope.
 - Supports **96-well**, **48-well** and **24-well** plates
 - Graphical selection of wells
 - Selectable magnification level (10x, 20x, 30x, 40x, 50x, 63x for our Nikon SMZ800 with 10x eyepieces)
@@ -30,13 +33,13 @@ The program starts from a main menu and opens a secondary window to view and int
     ```bash
    sudo apt update && sudo apt upgrade -y
    
-3. **Install Dependencies**
+2. **Install Dependencies**
 
    The required libraries can be installed by running:
    ```bash
    sudo apt install -y python3-tk python3-opencv python3-pil.imagetk
 
-5. **Clone the Repository**
+3. **Clone the Repository**
 
    If git is not installed, first install it with:
    ```bash
@@ -52,29 +55,41 @@ The program starts from a main menu and opens a secondary window to view and int
    ```bash
    cd WellView
    ```
-   
-7. **Run the Script:**
+
+4. **Run the Automated Installer**
+
+   The installer will set up the desktop shortcut, fix system execution permissions, and configure your microscope's magnification levels.
+
+   ```bash
+   chmod +x install.sh
+   ./install.sh
+   ```
+
+   _Note:_ During installation, you can press Enter to keep the default magnification levels (10x-63x) or type your own (e.g., 5x 10x 20x).
+      
+6. **Run the Script:**
    ```bash
    python3 wellview.py
 
 ## Usage
-1. Enter the *User Name* and *Microplate ID*.
-2. Select the *Microplate Type* (24/48/96 wells).
-3. Select the Samples per well / layout
+1. Launch: Double-click the WellView icon on your Desktop.
+2. Enter the *User Name* and *Microplate ID*.
+3. Select the *Microplate Type* (24/48/96 wells).
+4. Select the Samples per well / layout
    (automatically filtered according to the chosen plate).
 5. Select the *Magnification* (can be changed on the fly in the secondary interface).
 
    The Microplate ID can also be edited directly in the well selection interface.
-7. Click *Start* to open the well selection interface.
-8. Click any well to:
+6. Click *Start* to open the well selection interface.
+7. Click any well to:
    - identify its position,
    - select the sub-sample (if layout > 1),
    - annotate the microplate image,
    - capture an image from the Raspberry Pi camera.
-10. Click *Start Preview* to open a live preview from the Raspberry Pi camera.
-11. Click *Close Preview* to close the live preview from the Raspberry Pi camera.
-12. Click *Back* to return to the primary menu (and change the *Microplate ID*).
-13. Click *Finish* to exit the program.
+8. Click *Start Preview* to open a live preview from the Raspberry Pi camera.
+9. Click *Close Preview* to close the live preview from the Raspberry Pi camera.
+10. Click *Back* to return to the primary menu (and change the *Microplate ID*).
+11. Click *Finish* to exit the program.
 
 ## File Storage
 Images are automatically saved under:
