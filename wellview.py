@@ -1,7 +1,13 @@
+#!/usr/bin/python3
+
+# MAGNIFICATIONS_PLACEHOLDER 
+MAGNIFICATION_LIST = ["10x", "20x", "30x", "40x", "50x", "63x"]
+
 from tkinter import (
     Tk, Label, Entry, Button, StringVar, OptionMenu, W, E,
     Toplevel, Canvas, Text, Frame
 )
+
 import cv2
 from bisect import bisect
 from datetime import datetime
@@ -247,8 +253,8 @@ def open_image_window():
 
     Button(history_frame, text="Finish", command=main_window.quit).grid(row=2, column=2, padx=5, pady=2, sticky="w")
     
-    OptionMenu(history_frame, magnification, "10x", "20x", "30x", "40x", "50x", "63x").grid(row=3, column=1, padx=5, pady=2)
-
+    OptionMenu(history_frame, magnification, *MAGNIFICATION_LIST).grid(row=3, column=1, padx=5, pady=2)
+    
     preview_button_frame = Frame(history_frame)
     preview_button_frame.grid(row=4, column=0, columnspan=3, pady=5)
 
@@ -515,9 +521,9 @@ plate_label_field.grid(column=1, row=2)
 
 Label(main_window, text="Magnification:").grid(column=0, row=3)
 magnification_value = StringVar(main_window)
-magnification_value.set("10x")  # Standard value
-OptionMenu(main_window, magnification_value,
-           "10x", "20x", "30x", "40x", "50x", "63x").grid(column=1, row=3)
+
+magnification_value.set(MAGNIFICATION_LIST[0])  
+OptionMenu(main_window, magnification_value, *MAGNIFICATION_LIST).grid(column=1, row=3)
 
 # First level: microplate type
 Label(main_window, text="Microplate type").grid(column=0, row=4)
