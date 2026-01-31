@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Get the absolute path of the directory where the script is located
+# Get the absolute path of the directory
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 USER_HOME="/home/$(whoami)"
 
@@ -29,22 +29,25 @@ if [ -f "$DESKTOP_FILE" ]; then
     sed -i "s|Icon=.*|Icon=$DIR/icon.png|" "$DESKTOP_DESTINATION"
     sed -i "s|Exec=.*|Exec=lxterminal --working-directory=$DIR -e ./wellview.py|" "$DESKTOP_DESTINATION"
     chmod +x "$DESKTOP_DESTINATION"
-    echo "-> Desktop shortcut created."
 else
-    echo "-> Warning: WellView.desktop not found in current folder."
+    echo "-> Warning: WellView.desktop not found."
 fi
 
-# 4. System configuration: Enable Quick Exec (bypass 'Execute/Explain' menu)
+# 4. System configuration: Enable Quick Exec
 LIBFM_CONF="$USER_HOME/.config/libfm/libfm.conf"
 if [ -f "$LIBFM_CONF" ]; then
     sed -i 's/quick_exec=0/quick_exec=1/' "$LIBFM_CONF"
-    echo "-> System Quick Exec enabled."
+    echo "-> System Quick Exec enabled in libfm.conf."
 else
-    # Create the config folder if it doesn't exist
     mkdir -p "$(dirname "$LIBFM_CONF")"
-    echo "[config]\nquick_exec=1" > "$LIBFM_CONF"
-    echo "-> System Quick Exec configured (new file)."
+    echo -e "[config]\nquick_exec=1" > "$LIBFM_CONF"
+    echo "-> System Quick Exec configured."
 fi
 
-echo "Installation Complete!"
-echo "You can now start the program via the Desktop icon."
+# 5. Refresh Desktop Manager
+pcmanfm --reconfigure > /dev/null 2>&1
+pcmanfm --desktop --reconfigure > /dev/null 2>&1
+
+echo "WellView Installation Complete!"
+echo "NOTE: If the shortcut still asks for confirmation,"
+echo "please REBOOT your Raspberry Pi to apply changes."
