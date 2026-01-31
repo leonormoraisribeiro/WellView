@@ -19,12 +19,11 @@ if [ ! -z "$input_mags" ]; then
     echo "-> Magnification updated."
 fi
 
-# 3. Create the Desktop shortcut and fix formatting issues
+# 3. Create the Desktop shortcut
 DESKTOP_FILE="$DIR/WellView.desktop"
 FINAL_DESKTOP="$USER_DESKTOP/WellView.desktop"
 
 if [ -f "$DESKTOP_FILE" ]; then
-    # Remove Windows-style line endings (CRLF) and copy to Desktop
     tr -d '\r' < "$DESKTOP_FILE" > "$FINAL_DESKTOP"
     
     # Replace the PLACEHOLDER with the actual path
