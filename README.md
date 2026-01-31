@@ -67,7 +67,7 @@ The program starts from a main menu and opens a secondary window to view and int
 
    _Note:_ During installation, you can press Enter to keep the default magnification levels (10x-63x) or type your own (e.g., 5x 10x 20x).
       
-6. **Run the Script:**
+6. **Run the Script or click on the desktop icon:**
    ```bash
    python3 wellview.py
 
