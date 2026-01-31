@@ -1,53 +1,56 @@
 #!/bin/bash
 
-# Get the absolute path of the directory
+# Detect the absolute path where the folder is located
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-USER_HOME="/home/$(whoami)"
+USER_DESKTOP="/home/$(whoami)/Desktop"
 
 echo "Configuring WellView in: $DIR"
 
-# 1. Make the Python script executable
+# 1. Set execution permissions for the script and the icon
 chmod +x "$DIR/wellview.py"
+chmod 644 "$DIR/icon.png"
 
-# 2. Configure custom magnification values
+# 2. Configure custom magnification values (Optional)
 echo "Please enter the magnification values (e.g., 10x 20x 40x)."
-read -p "Press Enter to keep the default values: " input_mags
-
+read -p "Press Enter to keep the default: " input_mags
 if [ ! -z "$input_mags" ]; then
-    # Format input into a Python list: ["10x", "20x"]
     formatted=$(echo $input_mags | sed 's/[^ ]* /"&", /g;s/[^ ]*$/"&"/')
     sed -i "s/^MAGNIFICATION_LIST = .*/MAGNIFICATION_LIST = [$formatted]/" "$DIR/wellview.py"
-    echo "-> Magnification list updated."
+    echo "-> Magnification updated."
 fi
 
-# 3. Update the .desktop shortcut with correct paths
+# 3. Create the Desktop shortcut and fix formatting issues
 DESKTOP_FILE="$DIR/WellView.desktop"
-DESKTOP_DESTINATION="$USER_HOME/Desktop/WellView.desktop"
+FINAL_DESKTOP="$USER_DESKTOP/WellView.desktop"
 
 if [ -f "$DESKTOP_FILE" ]; then
-    cp "$DESKTOP_FILE" "$DESKTOP_DESTINATION"
-    sed -i "s|Icon=.*|Icon=$DIR/icon.png|" "$DESKTOP_DESTINATION"
-    sed -i "s|Exec=.*|Exec=lxterminal --working-directory=$DIR -e ./wellview.py|" "$DESKTOP_DESTINATION"
-    chmod +x "$DESKTOP_DESTINATION"
+    # Remove Windows-style line endings (CRLF) and copy to Desktop
+    tr -d '\r' < "$DESKTOP_FILE" > "$FINAL_DESKTOP"
+    
+    # Replace the PLACEHOLDER with the actual path
+    sed -i "s|PATH_HERE|$DIR|g" "$FINAL_DESKTOP"
+    
+    # Ensure the shortcut is executable
+    chmod +x "$FINAL_DESKTOP"
+    echo "-> Desktop shortcut created."
 else
-    echo "-> Warning: WellView.desktop not found."
+    echo "-> ERROR: WellView.desktop not found in the current folder!"
+    exit 1
 fi
 
-# 4. System configuration: Enable Quick Exec
-LIBFM_CONF="$USER_HOME/.config/libfm/libfm.conf"
+# 4. Enable Quick Exec in system config (bypass 'Execute or Explain' menu)
+LIBFM_CONF="/home/$(whoami)/.config/libfm/libfm.conf"
 if [ -f "$LIBFM_CONF" ]; then
     sed -i 's/quick_exec=0/quick_exec=1/' "$LIBFM_CONF"
-    echo "-> System Quick Exec enabled in libfm.conf."
 else
     mkdir -p "$(dirname "$LIBFM_CONF")"
     echo -e "[config]\nquick_exec=1" > "$LIBFM_CONF"
-    echo "-> System Quick Exec configured."
 fi
 
-# 5. Refresh Desktop Manager
+# 5. Refresh the system desktop manager to apply changes
 pcmanfm --reconfigure > /dev/null 2>&1
 pcmanfm --desktop --reconfigure > /dev/null 2>&1
+touch "$FINAL_DESKTOP"
 
-echo "WellView Installation Complete!"
-echo "NOTE: If the shortcut still asks for confirmation,"
-echo "please REBOOT your Raspberry Pi to apply changes."
+echo "Installation Complete!"
+echo "If the icon is still not visible, please reboot your Raspberry Pi."
