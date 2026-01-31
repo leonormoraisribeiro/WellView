@@ -38,7 +38,7 @@ else
     exit 1
 fi
 
-# 4. Enable Quick Exec in system config (bypass 'Execute or Explain' menu)
+# 4. Enable Quick Exec in system config
 LIBFM_CONF="/home/$(whoami)/.config/libfm/libfm.conf"
 if [ -f "$LIBFM_CONF" ]; then
     sed -i 's/quick_exec=0/quick_exec=1/' "$LIBFM_CONF"
