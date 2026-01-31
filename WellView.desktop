@@ -1,8 +1,8 @@
 [Desktop Entry]
 Name=WellView
 Comment=i3S Well Image Capturer
-Icon=/home/administrator/WellView/icon.png
-Exec=lxterminal --working-directory=/home/administrator/WellView/ -e ./wellview.py
+Icon=PATH_HERE/icon.png
+Exec=lxterminal --working-directory=PATH_HERE -e ./wellview.py
 Type=Application
 Encoding=UTF-8
 Terminal=false
